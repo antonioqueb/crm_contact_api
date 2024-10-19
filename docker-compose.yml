@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  flask_app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - ODOO_URL=${ODOO_URL}
+      - ODOO_DB=${ODOO_DB}
+      - ODOO_USERNAME=${ODOO_USERNAME}
+      - ODOO_PASSWORD=${ODOO_PASSWORD}
+    volumes:
+      - .:/app
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

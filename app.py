@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
-from contact import create_contact_by_phone, create_contact_by_email
+from contact import create_contact_by_phone, create_lead  # Importar funciones desde contact.py
 import logging
 import os
 
@@ -22,7 +22,7 @@ CORS(app, resources={
 # Ruta para crear contacto por teléfono
 @app.route('/create_contact_phone', methods=['POST', 'OPTIONS'])
 @cross_origin(origin='https://alphaqueb.com', methods=['POST', 'OPTIONS'], headers=['Content-Type', 'Authorization'])
-def create_contact_phone():
+def create_contact_phone_route():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
 
@@ -47,38 +47,39 @@ def create_contact_phone():
         return jsonify({'status': 'success', 'contact_id': contact_id}), 201
 
     except Exception as e:
-        logging.exception("Error en create_contact_phone")
+        logging.exception("Error en create_contact_phone_route")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Ruta para crear contacto por email
-@app.route('/create_contact_email', methods=['POST', 'OPTIONS'])
+# Ruta para crear oportunidad en CRM
+@app.route('/create_lead', methods=['POST', 'OPTIONS'])
 @cross_origin(origin='https://alphaqueb.com', methods=['POST', 'OPTIONS'], headers=['Content-Type', 'Authorization'])
-def create_contact_email():
+def create_lead_route():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
 
     try:
         data = request.get_json()
-        logging.debug(f"Datos recibidos en /create_contact_email: {data}")
+        logging.debug(f"Datos recibidos en /create_lead: {data}")
+        name = data.get('name')
         email = data.get('email')
         message = data.get('message')
         user_id = data.get('user_id')  # Opcional
         company_id = data.get('company_id')  # Opcional
 
-        logging.debug(f"email: {email}, message: {message}, user_id: {user_id}, company_id: {company_id}")
+        logging.debug(f"name: {name}, email: {email}, message: {message}, user_id: {user_id}, company_id: {company_id}")
 
-        if not email or not message:
-            mensaje_error = 'El correo electrónico y el mensaje son obligatorios'
+        if not name or not email or not message:
+            mensaje_error = 'El nombre, correo electrónico y mensaje son obligatorios'
             logging.error(mensaje_error)
             return jsonify({'status': 'error', 'message': mensaje_error}), 400
 
-        contact_id = create_contact_by_email(email, message, user_id, company_id)
-        logging.info(f"Contacto creado con ID: {contact_id}")
+        lead_id = create_lead(name, email, message, user_id, company_id)
+        logging.info(f"Oportunidad creada con ID: {lead_id}")
 
-        return jsonify({'status': 'success', 'contact_id': contact_id}), 201
+        return jsonify({'status': 'success', 'lead_id': lead_id}), 201
 
     except Exception as e:
-        logging.exception("Error en create_contact_email")
+        logging.exception("Error en create_lead_route")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # Manejador global de errores para incluir encabezados CORS en respuestas de error

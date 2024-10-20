@@ -8,7 +8,7 @@ app = Flask(__name__)
 # Configuración de CORS para permitir únicamente alphaqueb.com
 CORS(app, resources={
     r"/*": {
-        "origins": "https://alphaqueb.com"  # Solo permitir este dominio
+        "origins": "https://alphaqueb.com"
     }
 })
 
@@ -19,11 +19,13 @@ def create_contact_phone():
         data = request.json
         country_code = data.get('country_code')
         phone_number = data.get('phone_number')
+        user_id = data.get('user_id')  # Opcional
+        company_id = data.get('company_id')  # Opcional
 
         if not country_code or not phone_number:
             return jsonify({'status': 'error', 'message': 'El código de país y el número de teléfono son obligatorios'}), 400
 
-        contact_id = create_contact_by_phone(country_code, phone_number)
+        contact_id = create_contact_by_phone(country_code, phone_number, user_id, company_id)
 
         return jsonify({'status': 'success', 'contact_id': contact_id}), 201
 
@@ -37,11 +39,13 @@ def create_contact_email():
         data = request.json
         email = data.get('email')
         message = data.get('message')
+        user_id = data.get('user_id')  # Opcional
+        company_id = data.get('company_id')  # Opcional
 
         if not email or not message:
             return jsonify({'status': 'error', 'message': 'El correo electrónico y el mensaje son obligatorios'}), 400
 
-        contact_id = create_contact_by_email(email, message)
+        contact_id = create_contact_by_email(email, message, user_id, company_id)
 
         return jsonify({'status': 'success', 'contact_id': contact_id}), 201
 

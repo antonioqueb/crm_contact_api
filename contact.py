@@ -1,65 +1,96 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
+from contact import create_contact_by_phone, create_lead  # Importar la nueva función
 import logging
-from config import models, db, uid, password
+import os
 
-# Crear contacto por número de teléfono
-def create_contact_by_phone(country_code, phone_number, user_id=None, company_id=None):
+# Configurar el logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Crear la aplicación Flask
+app = Flask(__name__)
+
+# Configuración de CORS para permitir únicamente alphaqueb.com
+CORS(app, resources={
+    r"/*": {
+        "origins": "https://alphaqueb.com",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
+
+# Ruta para crear contacto por teléfono
+@app.route('/create_contact_phone', methods=['POST', 'OPTIONS'])
+@cross_origin(origin='https://alphaqueb.com', methods=['POST', 'OPTIONS'], headers=['Content-Type', 'Authorization'])
+def create_contact_phone_route():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+
     try:
-        # Formatear el número de teléfono completo
-        full_phone = f"+{country_code} {phone_number}"
-        logging.debug(f"Creando contacto con teléfono: {full_phone}")
+        data = request.get_json()
+        logging.debug(f"Datos recibidos en /create_contact_phone: {data}")
+        country_code = data.get('country_code')
+        phone_number = data.get('phone_number')
+        user_id = data.get('user_id')  # Opcional
+        company_id = data.get('company_id')  # Opcional
 
-        # Definir los datos del contacto a crear
-        contact_data = {
-            'name': f"Contacto {full_phone}",
-            'phone': full_phone,
-            'customer_rank': 1  # Se crea como cliente
-        }
+        logging.debug(f"country_code: {country_code}, phone_number: {phone_number}, user_id: {user_id}, company_id: {company_id}")
 
-        # Si se proporcionan user_id y company_id, los agregamos
-        if user_id:
-            contact_data['user_id'] = user_id
-        if company_id:
-            contact_data['company_id'] = company_id
+        if not country_code or not phone_number:
+            mensaje_error = 'El código de país y el número de teléfono son obligatorios'
+            logging.error(mensaje_error)
+            return jsonify({'status': 'error', 'message': mensaje_error}), 400
 
-        logging.debug(f"Datos del contacto a crear: {contact_data}")
+        contact_id = create_contact_by_phone(country_code, phone_number, user_id, company_id)
+        logging.info(f"Contacto creado con ID: {contact_id}")
 
-        # Crear el contacto en Odoo
-        contact_id = models.execute_kw(db, uid, password, 'res.partner', 'create', [contact_data])
-        logging.info(f"Contacto creado en Odoo con ID: {contact_id}")
-
-        return contact_id
+        return jsonify({'status': 'success', 'contact_id': contact_id}), 201
 
     except Exception as e:
-        logging.exception("Error en create_contact_by_phone")
-        raise e  # Re-lanzamos la excepción para que sea manejada en el nivel superior
+        logging.exception("Error en create_contact_phone_route")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Crear contacto por correo electrónico y mensaje
-def create_contact_by_email(email, message, user_id=None, company_id=None):
+# Ruta para crear oportunidad en CRM
+@app.route('/create_lead', methods=['POST', 'OPTIONS'])
+@cross_origin(origin='https://alphaqueb.com', methods=['POST', 'OPTIONS'], headers=['Content-Type', 'Authorization'])
+def create_lead_route():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+
     try:
-        logging.debug(f"Creando contacto con email: {email}")
+        data = request.get_json()
+        logging.debug(f"Datos recibidos en /create_lead: {data}")
+        name = data.get('name')
+        email = data.get('email')
+        message = data.get('message')
+        user_id = data.get('user_id')  # Opcional
+        company_id = data.get('company_id')  # Opcional
 
-        # Definir los datos del contacto a crear
-        contact_data = {
-            'name': f"Contacto {email}",
-            'email': email,
-            'comment': message,  # Guardar el mensaje en el campo 'comentario'
-            'customer_rank': 1  # Se crea como cliente
-        }
+        logging.debug(f"name: {name}, email: {email}, message: {message}, user_id: {user_id}, company_id: {company_id}")
 
-        # Si se proporcionan user_id y company_id, los agregamos
-        if user_id:
-            contact_data['user_id'] = user_id
-        if company_id:
-            contact_data['company_id'] = company_id
+        if not name or not email or not message:
+            mensaje_error = 'El nombre, correo electrónico y mensaje son obligatorios'
+            logging.error(mensaje_error)
+            return jsonify({'status': 'error', 'message': mensaje_error}), 400
 
-        logging.debug(f"Datos del contacto a crear: {contact_data}")
+        lead_id = create_lead(name, email, message, user_id, company_id)
+        logging.info(f"Oportunidad creada con ID: {lead_id}")
 
-        # Crear el contacto en Odoo
-        contact_id = models.execute_kw(db, uid, password, 'res.partner', 'create', [contact_data])
-        logging.info(f"Contacto creado en Odoo con ID: {contact_id}")
-
-        return contact_id
+        return jsonify({'status': 'success', 'lead_id': lead_id}), 201
 
     except Exception as e:
-        logging.exception("Error en create_contact_by_email")
-        raise e  # Re-lanzamos la excepción para que sea manejada en el nivel superior
+        logging.exception("Error en create_lead_route")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Manejador global de errores para incluir encabezados CORS en respuestas de error
+@app.errorhandler(Exception)
+@cross_origin(origin='https://alphaqueb.com')
+def handle_exception(e):
+    logging.exception("Excepción global capturada")
+    response = jsonify({'status': 'error', 'message': str(e)})
+    response.status_code = 500
+    return response
+
+if __name__ == '__main__':
+
+    app.run(host='0.0.0.0', port=5000, debug=True)

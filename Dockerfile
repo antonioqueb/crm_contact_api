@@ -4,9 +4,8 @@ FROM python:3.9-slim
 # Establecer el directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Copiar los archivos de requirements.txt y .env a la carpeta de trabajo
+# Copiar los archivos de requirements.txt al directorio de trabajo
 COPY requirements.txt ./
-COPY .env ./
 
 # Instalar las dependencias requeridas
 RUN pip install --no-cache-dir -r requirements.txt

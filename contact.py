@@ -12,7 +12,7 @@ def create_contact_by_phone(country_code, phone_number, user_id=None, company_id
         contact_data = {
             'name': f"Contacto {full_phone}",
             'phone': full_phone,
-            'customer': True  # Se crea como cliente
+            'customer_rank': 1  # Se crea como cliente
         }
 
         # Si se proporcionan user_id y company_id, los agregamos
@@ -43,7 +43,7 @@ def create_contact_by_email(email, message, user_id=None, company_id=None):
             'name': f"Contacto {email}",
             'email': email,
             'comment': message,  # Guardar el mensaje en el campo 'comentario'
-            'customer': True  # Se crea como cliente
+            'customer_rank': 1  # Se crea como cliente
         }
 
         # Si se proporcionan user_id y company_id, los agregamos

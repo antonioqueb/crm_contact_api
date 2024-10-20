@@ -19,7 +19,7 @@ CORS(app, resources={
     }
 })
 
-# Ruta para crear contacto por teléfono
+# Ruta para crear contacto por teléfono y oportunidad en CRM
 @app.route('/create_contact_phone', methods=['POST', 'OPTIONS'])
 @cross_origin(origin='https://alphaqueb.com', methods=['POST', 'OPTIONS'], headers=['Content-Type', 'Authorization'])
 def create_contact_phone_route():
@@ -41,10 +41,10 @@ def create_contact_phone_route():
             logging.error(mensaje_error)
             return jsonify({'status': 'error', 'message': mensaje_error}), 400
 
-        contact_id = create_contact_by_phone(country_code, phone_number, user_id, company_id)
-        logging.info(f"Contacto creado con ID: {contact_id}")
+        contact_id, lead_id = create_contact_by_phone(country_code, phone_number, user_id, company_id)
+        logging.info(f"Contacto y oportunidad creados con IDs: {contact_id}, {lead_id}")
 
-        return jsonify({'status': 'success', 'contact_id': contact_id}), 201
+        return jsonify({'status': 'success', 'contact_id': contact_id, 'lead_id': lead_id}), 201
 
     except Exception as e:
         logging.exception("Error en create_contact_phone_route")
